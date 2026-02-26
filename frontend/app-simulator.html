@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>绿色金融管理系统 - Android App</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f7fa;
+      color: #2c3e50;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      min-height: 100vh;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .app-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .app-header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .app-header .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .app-header .header-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .app-content {
+      padding: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #2c3e50;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background-color: #f0f0f0;
+      color: #2c3e50;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .input-field:focus {
+      border-color: #667eea;
+    }
+
+    .tab-container {
+      margin-bottom: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab {
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #7f8c8d;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .list-item:last-child {
+      border-bottom: none;
+    }
+
+    .list-item .item-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .list-item .item-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .list-item .item-content {
+      flex: 1;
+    }
+
+    .list-item .item-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .list-item .item-subtitle {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: 4px;
+    }
+
+    .list-item .item-right {
+      text-align: right;
+    }
+
+    .list-item .item-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .list-item .item-tag {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .tag-success {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: #4CAF50;
+    }
+
+    .tag-warning {
+      background-color: rgba(255, 152, 0, 0.1);
+      color: #FF9800;
+    }
+
+    .tag-danger {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: #f44336;
+    }
+
+    .tag-info {
+      background-color: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+    }
+
+    .chart-container {
+      height: 200px;
+      margin-bottom: 16px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background-color: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-card .stat-title {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .stat-card .stat-change {
+      font-size: 12px;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-change.positive {
+      color: #4CAF50;
+    }
+
+    .stat-change.negative {
+      color: #f44336;
+    }
+
+    .carousel {
+      position: relative;
+      height: 180px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .carousel-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.5s ease;
+    }
+
+    .carousel-item.active {
+      transform: translateX(0);
+    }
+
+    .carousel-item.next {
+      transform: translateX(100%);
+    }
+
+    .carousel-item.prev {
+      transform: translateX(-100%);
+    }
+
+    .carousel-dots {
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .carousel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+    }
+
+    .carousel-dot.active {
+      background-color: white;
+      width: 24px;
+      border-radius: 4px;
+    }
+
+    .welcome-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .welcome-section .welcome-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .welcome-section .welcome-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 16px;
+    }
+
+    .welcome-section .welcome-stats {
+      display: flex;
+      gap: 16px;
+    }
+
+    .welcome-section .mini-stat {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .footer {
+      background-color: #f5f7fa;
+      padding: 16px;
+      text-align: center;
+      font-size: 12px;
+      color: #7f8c8d;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background-color: white;
+      border-top: 1px solid #e0e0e0;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      z-index: 100;
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 12px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #7f8c8d;
+      cursor: pointer;
+    }
+
+    .nav-tab.active {
+      color: #667eea;
+    }
+
+    .nav-tab .nav-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #e0e0e0;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: #667eea;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .timeline-item .timeline-content {
+      background-color: white;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .timeline-item .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .timeline-item .timeline-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .timeline-item .timeline-time {
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+
+    .timeline-item .timeline-body {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.4;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #7f8c8d;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state .empty-text {
+      font-size: 14px;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #f0f0f0;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 登录页面样式 */
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+
+    .login-header .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .login-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .login-header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .login-form {
+      flex: 1;
+      padding: 24px;
+    }
+
+    .login-form .form-group {
+      margin-bottom: 16px;
+    }
+
+    .login-form .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    .login-form .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .login-form .form-input:focus {
+      border-color: #667eea;
+    }
+
+    .login-form .captcha-container {
+      display: flex;
+      gap: 12px;
+    }
+
+    .login-form .captcha-input {
+      flex: 1;
+    }
+
+    .login-form .captcha-code {
+      width: 100px;
+      height: 44px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
+
+    .login-form .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-form .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .login-footer {
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+
+    /* 任务详情页面样式 */
+    .task-detail-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 0 0 12px 12px;
+      margin-bottom: 16px;
+    }
+
+    .task-detail-header .task-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .task-detail-header .task-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .detail-section {
+      margin-bottom: 24px;
+    }
+
+    .detail-section .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #2c3e50;
+    }
+
+    .detail-item {
+      display: flex;
+      margin-bottom: 12px;
+    }
+
+    .detail-item .detail-label {
+      width: 100px;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
+
+    .detail-item .detail-value {
+      flex: 1;
+      font-size: 14px;
+      color: #2c3e50;
+      word-break: break-word;
+    }
+
+    .attachment-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background-color: white;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .attachment-item .attachment-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+    }
+
+    .attachment-item .attachment-info {
+      flex: 1;
+    }
+
+    .attachment-item .attachment-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2c3e50;
+      margin-bottom: 4px;
+    }
+
+    .attachment-item .attachment-meta {
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+
+    .attachment-item .attachment-action {
+      color: #667eea;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .process-flow {
+      background-color: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      margin-bottom: 16px;
+    }
+
+    .process-node {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .process-node .node-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 16px;
+    }
+
+    .process-node .node-icon.completed {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .process-node .node-icon.current {
+      background-color: #667eea;
+      color: white;
+    }
+
+    .process-node .node-icon.pending {
+      background-color: #f0f0f0;
+      color: #7f8c8d;
+    }
+
+    .process-node .node-content {
+      flex: 1;
+    }
+
+    .process-node .node-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2c3e50;
+      margin-bottom: 4px;
+    }
+
+    .process-node .node-desc {
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+
+    .process-node .node-line {
+      position: absolute;
+      left: 16px;
+      top: 32px;
+      bottom: -16px;
+      width: 2px;
+      background-color: #e0e0e0;
+    }
+
+    .process-node:last-child .node-line {
+      display: none;
+    }
+
+    /* 适配小屏幕 */
+    @media (max-width: 375px) {
+      .app-content {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .stats-grid {
+        gap: 8px;
+      }
+
+      .stat-card {
+        padding: 12px;
+      }
+
+      .carousel {
+        height: 150px;
+      }
+
+      .login-form {
+        padding: 20px;
+      }
+    }
+
+    /* 公告列表样式 */
+    .announcement-list {
+      padding: 0;
+    }
+
+    .announcement-item {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .announcement-cover {
+      width: 80px;
+      height: 60px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .announcement-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .announcement-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .announcement-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .announcement-summary {
+      font-size: 12px;
+      color: #7f8c8d;
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .announcement-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .load-more {
+      text-align: center;
+      padding: 16px;
+      color: #667eea;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 登录页面 -->
+  <div id="login-page" class="login-container">
+    <div class="login-header">
+      <div class="logo">
+        <span style="font-size: 32px;">🎯</span>
+      </div>
+      <h1>绿色金融管理系统</h1>
+      <p>登录您的账户</p>
+    </div>
+    <div class="login-form">
+      <div class="form-group">
+        <label class="form-label">登录账号</label>
+        <input type="text" class="form-input" placeholder="请输入登录账号">
+      </div>
+      <div class="form-group">
+        <label class="form-label">登录密码</label>
+        <input type="password" class="form-input" placeholder="请输入登录密码">
+      </div>
+      <div class="form-group">
+        <label class="form-label">验证码</label>
+        <div class="captcha-container">
+          <input type="text" class="form-input captcha-input" placeholder="请输入验证码">
+          <div class="captcha-code">D2CIK</div>
+        </div>
+      </div>
+      <button class="login-btn" onclick="showPage('home-page')">登录</button>
+    </div>
+    <div class="login-footer">
+      © 2025 绿色金融管理系统 · 技术支持
+    </div>
+  </div>
+
+  <!-- 主页 -->
+  <div id="home-page" class="app-container" style="display: none;">
+    <div class="app-header">
+      <h1>绿色金融管理系统</h1>
+      <div class="header-actions">
+        <div class="header-icon">🔍</div>
+        <div class="header-icon">📋</div>
+      </div>
+    </div>
+    <div class="app-content">
+      <!-- 系统公告轮播图 -->
+      <div class="carousel">
+        <div class="carousel-item active">
+          <div style="text-align: center; padding: 20px;">
+            <h3 style="color: #2c3e50; margin-bottom: 8px;">系统公告</h3>
+            <p style="color: #555; font-size: 14px;">绿色金融支持项目目录更新通知</p>
+          </div>
+        </div>
+        <div class="carousel-item next">
+          <div style="text-align: center; padding: 20px;">
+            <h3 style="color: #2c3e50; margin-bottom: 8px;">系统公告</h3>
+            <p style="color: #555; font-size: 14px;">关于开展2025年绿色金融业务培训的通知</p>
+          </div>
+        </div>
+        <div class="carousel-dots">
+          <div class="carousel-dot active"></div>
+          <div class="carousel-dot"></div>
+        </div>
+      </div>
+
+      <!-- 欢迎区域 -->
+      <div class="welcome-section">
+        <div class="welcome-title">欢迎 张三 登录</div>
+        <div class="welcome-subtitle">工作愉快～</div>
+        <div class="welcome-stats">
+          <div class="mini-stat" onclick="showPage('task-list-page'); switchToTab('pending');">
+            <div>📋 待办</div>
+            <div style="font-weight: 600;">12 项</div>
+          </div>
+          <div class="mini-stat" onclick="showPage('task-list-page'); switchToTab('completed');">
+            <div>✅ 已办</div>
+            <div style="font-weight: 600;">8 项</div>
+          </div>
+          <div class="mini-stat" onclick="showPage('task-list-page'); switchToTab('archived');">
+            <div>📁 办结</div>
+            <div style="font-weight: 600;">20 项</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 核心指标卡片 -->
+      <h2 class="section-title">核心指标</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">绿色贷款余额</div>
+          <div class="stat-value">12.56 万亿元</div>
+          <div class="stat-change positive">
+            <span>↗</span>
+            <span>5.2%</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">绿色投资</div>
+          <div class="stat-value">3.24 万亿元</div>
+          <div class="stat-change positive">
+            <span>↗</span>
+            <span>8.7%</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">绿色租赁</div>
+          <div class="stat-value">1.89 万亿元</div>
+          <div class="stat-change positive">
+            <span>↗</span>
+            <span>6.3%</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">绿色理财</div>
+          <div class="stat-value">2.15 万亿元</div>
+          <div class="stat-change positive">
+            <span>↗</span>
+            <span>10.1%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据图表 -->
+      <h2 class="section-title">数据趋势</h2>
+      <div class="card">
+        <div class="chart-container" id="loanBalanceChart"></div>
+      </div>
+      <div class="card">
+        <div class="chart-container" id="disbursementChart"></div>
+      </div>
+      <div class="card">
+        <div class="chart-container" id="categoryChart"></div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="showPage('home-page')">
+        <div class="nav-icon">🏠</div>
+        <div>首页</div>
+      </div>
+      <div class="nav-tab" onclick="showPage('announcement-list-page')">
+        <div class="nav-icon">📢</div>
+        <div>消息</div>
+      </div>
+      <div class="nav-tab" onclick="showPage('profile-page')">
+        <div class="nav-icon">👤</div>
+        <div>我的</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 公告列表页面 -->
+  <div id="announcement-list-page" class="app-container" style="display: none;">
+    <div class="app-header">
+      <h1>系统公告</h1>
+      <div class="header-actions">
+        <div class="header-icon">🔍</div>
+      </div>
+    </div>
+    <div class="app-content">
+      <div class="announcement-list">
+        <div class="announcement-item">
+          <div class="announcement-cover">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='60'%3E%3Crect fill='%23667eea' width='100' height='60'/%3E%3Ctext x='50' y='35' fill='white' text-anchor='middle' font-size='10'%3E封面图%3C/text%3E%3C/svg%3E" alt="封面">
+          </div>
+          <div class="announcement-info">
+            <div class="announcement-title">绿色金融支持项目目录更新通知</div>
+            <div class="announcement-summary">根据最新政策要求，现对绿色金融支持项目目录进行更新...</div>
+            <div class="announcement-meta">
+              <span>📅 2025-02-25</span>
+              <span>👁️ 128</span>
+            </div>
+          </div>
+        </div>
+        <div class="announcement-item">
+          <div class="announcement-cover">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='60'%3E%3Crect fill='%2327ae60' width='100' height='60'/%3E%3Ctext x='50' y='35' fill='white' text-anchor='middle' font-size='10'%3E封面图%3C/text%3E%3C/svg%3E" alt="封面">
+          </div>
+          <div class="announcement-info">
+            <div class="announcement-title">关于开展2025年绿色金融业务培训的通知</div>
+            <div class="announcement-summary">为提升全员绿色金融业务能力，定于3月份开展培训...</div>
+            <div class="announcement-meta">
+              <span>📅 2025-02-24</span>
+              <span>👁️ 86</span>
+            </div>
+          </div>
+        </div>
+        <div class="announcement-item">
+          <div class="announcement-cover">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='60'%3E%3Crect fill='%23e74c3c' width='100' height='60'/%3E%3Ctext x='50' y='35' fill='white' text-anchor='middle' font-size='10'%3E封面图%3C/text%3E%3C/svg%3E" alt="封面">
+          </div>
+          <div class="announcement-info">
+            <div class="announcement-title">系统维护通知</div>
+            <div class="announcement-summary">系统将于今晚24:00进行维护升级...</div>
+            <div class="announcement-meta">
+              <span>📅 2025-02-23</span>
+              <span>👁️ 245</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="load-more" id="load-more">
+        <span>上滑加载更多</span>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab" onclick="showPage('home-page')">
+        <div class="nav-icon">🏠</div>
+        <div>首页</div>
+      </div>
+      <div class="nav-tab active" onclick="showPage('announcement-list-page')">
+        <div class="nav-icon">�</div>
+        <div>消息</div>
+      </div>
+      <div class="nav-tab" onclick="showPage('profile-page')">
+        <div class="nav-icon">👤</div>
+        <div>我的</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任务列表页面 -->
+  <div id="task-list-page" class="app-container" style="display: none;">
+    <div class="app-header">
+      <h1>任务列表</h1>
+      <div class="header-actions">
+        <div class="header-icon">🔍</div>
+      </div>
+    </div>
+    <div class="app-content">
+      <!-- 标签页 -->
+      <div class="tab-container">
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab('pending')">待办任务</div>
+          <div class="tab" onclick="switchTab('completed')">已办任务</div>
+          <div class="tab" onclick="switchTab('archived')">办结任务</div>
+        </div>
+
+        <!-- 待办任务 -->
+        <div id="pending-tab" class="tab-content active">
+          <div class="card">
+            <div class="list-item" onclick="showPage('task-detail-page')">
+              <div class="item-left">
+                <div class="item-icon">🏢</div>
+                <div class="item-content">
+                  <div class="item-title">中国建设银行</div>
+                  <div class="item-subtitle">绿色贷款项目认定</div>
+                </div>
+              </div>
+              <div class="item-right">
+                <div class="item-tag tag-warning">待处理</div>
+              </div>
+            </div>
+            <div class="list-item" onclick="showPage('task-detail-page')">
+              <div class="item-left">
+                <div class="item-icon">🏢</div>
+                <div class="item-content">
+                  <div class="item-title">中国工商银行</div>
+                  <div class="item-subtitle">绿色投资项目审核</div>
+                </div>
+              </div>
+              <div class="item-right">
+                <div class="item-tag tag-warning">待处理</div>
+              </div>
+            </div>
+            <div class="list-item" onclick="showPage('task-detail-page')">
+              <div class="item-left">
+                <div class="item-icon">🏢</div>
+                <div class="item-content">
+                  <div class="item-title">中国农业银行</div>
+                  <div class="item-subtitle">绿色租赁项目审批</div>
+                </div>
+              </div>
+              <div class="item-right">
+                <div class="item-tag tag-warning">待处理</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 已办任务 -->
+        <div id="completed-tab" class="tab-content">
+          <div class="card">
+            <div class="list-item" onclick="showPage('task-detail-page')">
+              <div class="item-left">
+                <div class="item-icon">🏢</div>
+                <div class="item-content">
+                  <div class="item-title">中国银行</div>
+                  <div class="item-subtitle">绿色贷款项目认定</div>
+                </div>
+              </div>
+              <div class="item-right">
+                <div class="item-tag tag-info">已处理</div>
+              </div>
+            </div>
+            <div class="list-item" onclick="showPage('task-detail-page')">
+              <div class="item-left">
+                <div class="item-icon">🏢</div>
+                <div class="item-content">
+                  <div class="item-title">交通银行</div>
+                  <div class="item-subtitle">绿色投资项目审核</div>
+                </div>
+              </div>
+              <div class="item-right">
+                <div class="item-tag tag-info">已处理</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 办结任务 -->
+        <div id="archived-tab" class="tab-content">
+          <div class="card">
+            <div class="list-item" onclick="showPage('task-detail-page')">
+              <div class="item-left">
+                <div class="item-icon">🏢</div>
+                <div class="item-content">
+                  <div class="item-title">招商银行</div>
+                  <div class="item-subtitle">绿色贷款项目认定</div>
+                </div>
+              </div>
+              <div class="item-right">
+                <div class="item-tag tag-success">已办结</div>
+              </div>
+            </div>
+            <div class="list-item" onclick="showPage('task-detail-page')">
+              <div class="item-left">
+                <div class="item-icon">🏢</div>
+                <div class="item-content">
+                  <div class="item-title">中信银行</div>
+                  <div class="item-subtitle">绿色投资项目审核</div>
+                </div>
+              </div>
+              <div class="item-right">
+                <div class="item-tag tag-success">已办结</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab" onclick="showPage('home-page')">
+        <div class="nav-icon">🏠</div>
+        <div>首页</div>
+      </div>
+      <div class="nav-tab active" onclick="showPage('task-list-page')">
+        <div class="nav-icon">📋</div>
+        <div>任务</div>
+      </div>
+      <div class="nav-tab" onclick="showPage('profile-page')">
+        <div class="nav-icon">👤</div>
+        <div>我的</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任务详情页面 -->
+  <div id="task-detail-page" class="app-container" style="display: none;">
+    <div class="task-detail-header">
+      <div class="task-title">任务详情 - 中国建设银行</div>
+      <div class="task-subtitle">绿色贷款项目认定</div>
+    </div>
+    <div class="app-content">
+      <!-- 标签页 -->
+      <div class="tab-container">
+        <div class="tabs">
+          <div class="tab active" onclick="switchDetailTab('business')">业务信息</div>
+          <div class="tab" onclick="switchDetailTab('approval')">审批记录</div>
+          <div class="tab" onclick="switchDetailTab('flow')">流程跟踪</div>
+          <div class="tab" onclick="switchDetailTab('category')">绿色分类变动</div>
+          <div class="tab" onclick="switchDetailTab('attachments')">附件列表</div>
+        </div>
+
+        <!-- 业务信息 -->
+        <div id="business-tab" class="tab-content active">
+          <div class="card">
+            <div class="detail-item">
+              <div class="detail-label">贷款编号</div>
+              <div class="detail-value">GL20250721001</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">客户名称</div>
+              <div class="detail-value">中国建设银行</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">业务品种</div>
+              <div class="detail-value">绿色贷款</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">贷款账号</div>
+              <div class="detail-value">6227001234567890123</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">放款金额</div>
+              <div class="detail-value">10,000,000.00 元</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">放款日期</div>
+              <div class="detail-value">2025-07-21</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">绿色金融支持项目目录</div>
+              <div class="detail-value">节能环保产业/高效节能技术装备/节能装备制造</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">任务办理截止日期</div>
+              <div class="detail-value">2025-07-28</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">状态</div>
+              <div class="detail-value">
+                <span class="item-tag tag-warning">待处理</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">发起人</div>
+              <div class="detail-value">李四</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">发起时间</div>
+              <div class="detail-value">2025-07-21 10:30:00</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 class="section-title">办理意见</h3>
+            <textarea class="input-field" rows="4" placeholder="请输入办理意见"></textarea>
+          </div>
+          <div class="card">
+            <h3 class="section-title">材料上传</h3>
+            <div class="attachment-item">
+              <div class="attachment-icon">📄</div>
+              <div class="attachment-info">
+                <div class="attachment-name">绿色贷款项目申请表.pdf</div>
+                <div class="attachment-meta">2.5MB · 2025-07-21</div>
+              </div>
+              <div class="attachment-action">下载</div>
+            </div>
+            <div class="attachment-item">
+              <div class="attachment-icon">📄</div>
+              <div class="attachment-info">
+                <div class="attachment-name">项目可行性研究报告.pdf</div>
+                <div class="attachment-meta">5.8MB · 2025-07-21</div>
+              </div>
+              <div class="attachment-action">下载</div>
+            </div>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 12px;">+ 上传文件</button>
+          </div>
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="btn btn-secondary" style="flex: 1;">暂存</button>
+            <button class="btn btn-primary" style="flex: 1;">提交审批</button>
+          </div>
+        </div>
+
+        <!-- 审批记录 -->
+        <div id="approval-tab" class="tab-content">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div class="timeline-title">客户经理认定</div>
+                  <div class="timeline-time">2025-07-21 10:30:00</div>
+                </div>
+                <div class="timeline-body">
+                  <div>审批人：李四</div>
+                  <div>审批结果：同意</div>
+                  <div>意见：项目符合绿色贷款标准，建议通过。</div>
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div class="timeline-title">二级分行绿色金融管理岗</div>
+                  <div class="timeline-time">2025-07-21 14:20:00</div>
+                </div>
+                <div class="timeline-body">
+                  <div>审批人：王五</div>
+                  <div>审批结果：同意</div>
+                  <div>意见：同意客户经理意见，建议提交一级分行审批。</div>
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div class="timeline-title">一级分行绿色金融管理岗</div>
+                  <div class="timeline-time">2025-07-22 09:15:00</div>
+                </div>
+                <div class="timeline-body">
+                  <div>审批人：赵六</div>
+                  <div>审批结果：待处理</div>
+                  <div>意见：</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 流程跟踪 -->
+        <div id="flow-tab" class="tab-content">
+          <div class="process-flow">
+            <div class="process-node">
+              <div class="node-icon completed">✓</div>
+              <div class="node-content">
+                <div class="node-title">开始</div>
+                <div class="node-desc">客户经理发起认定</div>
+              </div>
+            </div>
+            <div class="process-node">
+              <div class="node-icon completed">✓</div>
+              <div class="node-content">
+                <div class="node-title">客户经理认定</div>
+                <div class="node-desc">填写认定信息</div>
+              </div>
+            </div>
+            <div class="process-node">
+              <div class="node-icon completed">✓</div>
+              <div class="node-content">
+                <div class="node-title">二级分行绿色金融管理岗</div>
+                <div class="node-desc">绿色金融管理部门审核</div>
+              </div>
+            </div>
+            <div class="process-node">
+              <div class="node-icon current">⌛</div>
+              <div class="node-content">
+                <div class="node-title">一级分行绿色金融管理岗</div>
+                <div class="node-desc">一级分行审批</div>
+              </div>
+            </div>
+            <div class="process-node">
+              <div class="node-icon pending">○</div>
+              <div class="node-content">
+                <div class="node-title">一级分行绿色金融复核岗</div>
+                <div class="node-desc">最终复核</div>
+              </div>
+            </div>
+            <div class="process-node">
+              <div class="node-icon pending">○</div>
+              <div class="node-content">
+                <div class="node-title">结束</div>
+                <div class="node-desc">流程完成</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 绿色分类变动 -->
+        <div id="category-tab" class="tab-content">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div class="timeline-title">客户经理认定</div>
+                  <div class="timeline-time">2025-07-21 10:30:00</div>
+                </div>
+                <div class="timeline-body">
+                  <div>办理人：李四</div>
+                  <div>绿色金融支持项目目录：节能环保产业/高效节能技术装备/节能装备制造</div>
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div class="timeline-title">二级分行绿色金融管理岗</div>
+                  <div class="timeline-time">2025-07-21 14:20:00</div>
+                </div>
+                <div class="timeline-body">
+                  <div>办理人：王五</div>
+                  <div>绿色金融支持项目目录：节能环保产业/高效节能技术装备/节能装备制造</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 附件列表 -->
+        <div id="attachments-tab" class="tab-content">
+          <div class="card">
+            <div class="attachment-item">
+              <div class="attachment-icon">📄</div>
+              <div class="attachment-info">
+                <div class="attachment-name">绿色贷款项目申请表.pdf</div>
+                <div class="attachment-meta">2.5MB · 2025-07-21 · 李四</div>
+              </div>
+              <div class="attachment-action">下载</div>
+            </div>
+            <div class="attachment-item">
+              <div class="attachment-icon">📄</div>
+              <div class="attachment-info">
+                <div class="attachment-name">项目可行性研究报告.pdf</div>
+                <div class="attachment-meta">5.8MB · 2025-07-21 · 李四</div>
+              </div>
+              <div class="attachment-action">下载</div>
+            </div>
+            <div class="attachment-item">
+              <div class="attachment-icon">📄</div>
+              <div class="attachment-info">
+                <div class="attachment-name">绿色项目认定表.pdf</div>
+                <div class="attachment-meta">1.2MB · 2025-07-21 · 王五</div>
+              </div>
+              <div class="attachment-action">下载</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab" onclick="showPage('home-page')">
+        <div class="nav-icon">🏠</div>
+        <div>首页</div>
+      </div>
+      <div class="nav-tab active" onclick="showPage('task-list-page')">
+        <div class="nav-icon">📋</div>
+        <div>任务</div>
+      </div>
+      <div class="nav-tab" onclick="showPage('profile-page')">
+        <div class="nav-icon">👤</div>
+        <div>我的</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 个人中心页面 -->
+  <div id="profile-page" class="app-container" style="display: none;">
+    <div class="app-header">
+      <h1>个人中心</h1>
+    </div>
+    <div class="app-content">
+      <div class="card">
+        <div class="list-item">
+          <div class="item-left">
+            <div class="item-icon">👤</div>
+            <div class="item-content">
+              <div class="item-title">个人信息</div>
+              <div class="item-subtitle">查看和编辑个人资料</div>
+            </div>
+          </div>
+          <div class="item-right">
+            <div>›</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="item-left">
+            <div class="item-icon">⚙️</div>
+            <div class="item-content">
+              <div class="item-title">系统设置</div>
+              <div class="item-subtitle">设置系统参数</div>
+            </div>
+          </div>
+          <div class="item-right">
+            <div>›</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="item-left">
+            <div class="item-icon">📞</div>
+            <div class="item-content">
+              <div class="item-title">联系客服</div>
+              <div class="item-subtitle">获取技术支持</div>
+            </div>
+          </div>
+          <div class="item-right">
+            <div>›</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="item-left">
+            <div class="item-icon">ℹ️</div>
+            <div class="item-content">
+              <div class="item-title">关于系统</div>
+              <div class="item-subtitle">版本信息和版权声明</div>
+            </div>
+          </div>
+          <div class="item-right">
+            <div>›</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="item-left">
+            <div class="item-icon">🚪</div>
+            <div class="item-content">
+              <div class="item-title" style="color: #f44336;">退出登录</div>
+            </div>
+          </div>
+          <div class="item-right">
+            <div>›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab" onclick="showPage('home-page')">
+        <div class="nav-icon">🏠</div>
+        <div>首页</div>
+      </div>
+      <div class="nav-tab" onclick="showPage('task-list-page')">
+        <div class="nav-icon">📋</div>
+        <div>任务</div>
+      </div>
+      <div class="nav-tab active" onclick="showPage('profile-page')">
+        <div class="nav-icon">👤</div>
+        <div>我的</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 页面切换函数
+    function showPage(pageId) {
+      // 隐藏所有页面
+      document.querySelectorAll('.app-container, .login-container').forEach(page => {
+        page.style.display = 'none';
+      });
+      // 显示目标页面
+      document.getElementById(pageId).style.display = 'block';
+      // 更新导航标签状态
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // 激活对应导航标签
+      if (pageId === 'home-page') {
+        document.querySelectorAll('.nav-tab')[0].classList.add('active');
+        initCharts();
+      } else if (pageId === 'announcement-list-page') {
+        document.querySelectorAll('.nav-tab')[1].classList.add('active');
+      } else if (pageId === 'profile-page') {
+        document.querySelectorAll('.nav-tab')[2].classList.add('active');
+      }
+    }
+
+    // 任务列表标签切换
+    function switchTab(tabId) {
+      // 隐藏所有标签内容
+      document.querySelectorAll('#pending-tab, #completed-tab, #archived-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // 显示目标标签内容
+      document.getElementById(tabId + '-tab').classList.add('active');
+      // 更新标签状态
+      document.querySelectorAll('.tabs .tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // 激活对应标签
+      event.target.classList.add('active');
+    }
+
+    // 从首页跳转到任务列表的指定标签
+    function switchToTab(tabId) {
+      // 隐藏所有标签内容
+      document.querySelectorAll('#pending-tab, #completed-tab, #archived-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // 显示目标标签内容
+      document.getElementById(tabId + '-tab').classList.add('active');
+      // 更新标签状态
+      document.querySelectorAll('.tabs .tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // 激活对应标签
+      if (tabId === 'pending') {
+        document.querySelectorAll('.tabs .tab')[0].classList.add('active');
+      } else if (tabId === 'completed') {
+        document.querySelectorAll('.tabs .tab')[1].classList.add('active');
+      } else if (tabId === 'archived') {
+        document.querySelectorAll('.tabs .tab')[2].classList.add('active');
+      }
+    }
+
+    // 任务详情标签切换
+    function switchDetailTab(tabId) {
+      // 隐藏所有标签内容
+      document.querySelectorAll('#business-tab, #approval-tab, #flow-tab, #category-tab, #attachments-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // 显示目标标签内容
+      document.getElementById(tabId + '-tab').classList.add('active');
+      // 更新标签状态
+      document.querySelectorAll('.tabs .tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // 激活对应标签
+      event.target.classList.add('active');
+    }
+
+    // 初始化图表
+    function initCharts() {
+      // 贷款余额趋势图表
+      const loanBalanceChart = echarts.init(document.getElementById('loanBalanceChart'));
+      const loanBalanceOption = {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+          axisLabel: {
+            rotate: 45,
+            fontSize: 11
+          }
+        },
+        yAxis: {
+          type: 'value',
+          name: '万亿元',
+          axisLabel: {
+            formatter: '{value}'
+          }
+        },
+        series: [{
+          name: '贷款余额',
+          type: 'bar',
+          data: [10.2, 10.5, 10.8, 11.1, 11.5, 11.8, 12.1, 12.3, 12.5, 12.6, 12.7, 12.8],
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [{
+                offset: 0, color: '#4CAF50'
+              }, {
+                offset: 1, color: '#81C784'
+              }]
+            }
+          },
+          barWidth: '50%'
+        }]
+      };
+      loanBalanceChart.setOption(loanBalanceOption);
+
+      // 放款金额趋势图表
+      const disbursementChart = echarts.init(document.getElementById('disbursementChart'));
+      const disbursementOption = {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+          axisLabel: {
+            rotate: 45,
+            fontSize: 11
+          }
+        },
+        yAxis: {
+          type: 'value',
+          name: '万亿元',
+          axisLabel: {
+            formatter: '{value}'
+          }
+        },
+        series: [{
+          name: '放款金额',
+          type: 'bar',
+          data: [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9],
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [{
+                offset: 0, color: '#667eea'
+              }, {
+                offset: 1, color: '#764ba2'
+              }]
+            }
+          },
+          barWidth: '50%'
+        }]
+      };
+      disbursementChart.setOption(disbursementOption);
+
+      // 绿色大类占比图表
+      const categoryChart = echarts.init(document.getElementById('categoryChart'));
+      const categoryOption = {
+        tooltip: {
+          trigger: 'item',
+          formatter: '{a} <br/>{b}: {c} ({d}%)'
+        },
+        legend: {
+          orient: 'vertical',
+          right: 10,
+          top: 'center',
+          textStyle: {
+            fontSize: 12
+          }
+        },
+        series: [{
+          name: '绿色大类',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          label: {
+            show: false,
+            position: 'center'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: '14',
+              fontWeight: 'bold'
+            }
+          },
+          labelLine: {
+            show: false
+          },
+          data: [
+            { value: 4.2, name: '节能环保产业' },
+            { value: 3.1, name: '清洁生产产业' },
+            { value: 2.8, name: '清洁能源产业' },
+            { value: 1.5, name: '生态环境产业' },
+            { value: 0.9, name: '基础设施绿色升级' }
+          ]
+        }]
+      };
+      categoryChart.setOption(categoryOption);
+
+      // 响应式调整
+      window.addEventListener('resize', function() {
+        loanBalanceChart.resize();
+        disbursementChart.resize();
+        categoryChart.resize();
+      });
+    }
+
+    // 轮播图功能
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.carousel-item');
+    const dots = document.querySelectorAll('.carousel-dot');
+
+    function nextSlide() {
+      slides[currentSlide].classList.remove('active');
+      slides[currentSlide].classList.add('prev');
+      dots[currentSlide].classList.remove('active');
+      
+      currentSlide = (currentSlide + 1) % slides.length;
+      
+      slides[currentSlide].classList.remove('next');
+      slides[currentSlide].classList.add('active');
+      dots[currentSlide].classList.add('active');
+    }
+
+    // 自动轮播
+    setInterval(nextSlide, 3000);
+  </script>
+</body>
+</html>

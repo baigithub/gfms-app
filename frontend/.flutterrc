@@ -1,0 +1,12 @@
+# Flutter镜像配置
+# 将此文件放到用户主目录下：~/.flutterrc
+
+environment:
+  PUB_CACHE: ~/.pub-cache
+  FLUTTER_STORAGE_BASE_URL: https://mirrors.tuna.tsinghua.edu.cn/flutter
+  FLUTTER_ROOT: /opt/flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
