@@ -32,9 +32,9 @@ class _TaskListPageState extends State<TaskListPage> with SingleTickerProviderSt
   Future<void> _loadTasks() async {
     setState(() => _isLoading = true);
     try {
-      final pendingData = await ApiClient().getPendingTasks();
-      final completedData = await ApiClient().getCompletedTasks();
-      final archivedData = await ApiClient().getArchivedTasks();
+      final pendingData = await ApiClient.instance.getPendingTasks();
+      final completedData = await ApiClient.instance.getCompletedTasks();
+      final archivedData = await ApiClient.instance.getArchivedTasks();
       if (mounted) {
         setState(() {
           _pendingTasks = _extractItems(pendingData);
@@ -96,15 +96,15 @@ class _TaskListPageState extends State<TaskListPage> with SingleTickerProviderSt
           : TabBarView(
               controller: _tabController,
               children: [
-                _buildTaskList(_pendingTasks),
-                _buildTaskList(_completedTasks),
-                _buildTaskList(_archivedTasks),
+                _buildTaskListContent(_pendingTasks),
+                _buildTaskListContent(_completedTasks),
+                _buildTaskListContent(_archivedTasks),
               ],
             ),
     );
   }
 
-  Widget _buildTaskList(List<dynamic> tasks) {
+  Widget _buildTaskListContent(List<dynamic> tasks) {
     if (tasks.isEmpty) {
       return const Center(child: Text('暂无任务'));
     }

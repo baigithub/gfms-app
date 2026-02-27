@@ -24,7 +24,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserInfo() async {
     try {
-      final userInfo = await ApiClient().getCurrentUser();
+      final userInfo = await ApiClient.instance.getCurrentUser();
       if (mounted) {
         setState(() {
           _userName = userInfo['username'] ?? '';
@@ -65,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (confirmed == true) {
       try {
-        await ApiClient().logout();
+        await ApiClient.instance.logout();
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const LoginPage()),

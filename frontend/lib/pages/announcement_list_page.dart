@@ -30,7 +30,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
     }
 
     try {
-      final data = await ApiClient().getAnnouncements(
+      final data = await ApiClient.instance.getAnnouncements(
         page: _currentPage,
         pageSize: _pageSize,
       );

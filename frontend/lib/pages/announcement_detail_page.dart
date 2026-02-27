@@ -22,7 +22,7 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
 
   Future<void> _loadAnnouncementDetail() async {
     try {
-      final data = await ApiClient().getAnnouncements(
+      final data = await ApiClient.instance.getAnnouncements(
         page: widget.announcementId,
         pageSize: 1,
       );

@@ -35,8 +35,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
 
   Future<void> _loadTaskDetail() async {
     try {
-      final data = await ApiClient().getTaskDetail(widget.taskId);
-      final categories = await ApiClient().getGreenCategories();
+      final data = await ApiClient.instance.getTaskDetail(widget.taskId);
+      final categories = await ApiClient.instance.getGreenCategories();
       if (mounted) {
         setState(() {
           _taskDetail = data is Map ? data : {};
@@ -118,14 +118,14 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
       };
       
       if (action == 'save') {
-        await ApiClient().saveTask(widget.taskId, data);
+        await ApiClient.instance.saveTask(widget.taskId, data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('暂存成功')),
           );
         }
       } else if (action == 'return') {
-        await ApiClient().returnTask(widget.taskId, data);
+        await ApiClient.instance.returnTask(widget.taskId, data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('退回成功')),
@@ -133,7 +133,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
           Navigator.pop(context);
         }
       } else if (action == 'complete') {
-        await ApiClient().completeTask(widget.taskId, data);
+        await ApiClient.instance.completeTask(widget.taskId, data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('提交成功')),
