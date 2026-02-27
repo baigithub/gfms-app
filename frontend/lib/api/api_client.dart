@@ -7,7 +7,7 @@ class ApiClient {
   factory ApiClient() => _instance;
   static ApiClient get instance => _instance;
   
-  static const String baseUrl = 'http://localhost:8080/api';
+  static const String baseUrl = 'http://localhost:8000/api';
   static const String clientType = 'app'; // 客户端类型：pc, app, mini_program, official_account
   
   String? _token;

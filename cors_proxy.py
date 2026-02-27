@@ -9,7 +9,8 @@ import json
 import sys
 import threading
 
-PORT = 8080
+import os
+PORT = int(os.environ.get('PORT', 8080))
 TARGET_HOST = "http://localhost:8000"
 TIMEOUT = 10
 

@@ -64,12 +64,20 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (confirmed == true) {
-      await ApiClient().logout();
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-          (route) => false,
-        );
+      try {
+        await ApiClient().logout();
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+            (route) => false,
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('退出失败: $e')),
+          );
+        }
       }
     }
   }
