@@ -87,7 +87,7 @@ class _TaskListPageState extends State<TaskListPage> with SingleTickerProviderSt
           tabs: [
             Tab(text: '待处理 (${_pendingTasks.length})'),
             Tab(text: '已完成 (${_completedTasks.length})'),
-            Tab(text: '已归档 (${_archivedTasks.length})'),
+            Tab(text: '已办结 (${_archivedTasks.length})'),
           ],
         ),
       ),
@@ -128,9 +128,13 @@ class _TaskListPageState extends State<TaskListPage> with SingleTickerProviderSt
               ],
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TaskDetailPage(taskId: task['id']))),
-          ),
-        );
+            onTap: () async {
+              final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => TaskDetailPage(taskId: task['task_id'] ?? task['id'] ?? 0)));
+              if (result == true) {
+                _loadTasks();
+              }
+            }),
+          );
       },
     );
   }

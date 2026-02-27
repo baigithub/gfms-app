@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +15,12 @@ class ApiClient {
   String? _token;
   late SharedPreferences _prefs;
   http.Client? _client;
+  
+  static GlobalKey<NavigatorState>? navigatorKey;
+  
+  void setNavigatorKey(GlobalKey<NavigatorState> key) {
+    navigatorKey = key;
+  }
   
   http.Client get client {
     _client ??= http.Client();
@@ -39,6 +46,11 @@ class ApiClient {
   
   String? get token => _token;
   
+  void handleUnauthorized() {
+    clearToken();
+    navigatorKey?.currentState?.pushReplacementNamed('/login');
+  }
+  
   Map<String, String> get _headers {
     final headers = {
       'Content-Type': 'application/json',
@@ -48,6 +60,18 @@ class ApiClient {
       headers['Authorization'] = 'Bearer $_token';
     }
     return headers;
+  }
+  
+  String _getErrorMessage(dynamic response) {
+    try {
+      if (response is http.Response) {
+        final body = jsonDecode(response.body);
+        return body['detail'] ?? '操作失败';
+      }
+    } catch (e) {
+      return '操作失败';
+    }
+    return '操作失败';
   }
 
   // 登录
@@ -62,6 +86,7 @@ class ApiClient {
       final data = jsonDecode(response.body);
       if (data['access_token'] != null) {
         setToken(data['access_token']);
+        await _prefs.setString('token', data['access_token']);
         _prefs.setString('user_real_name', data['user']?['real_name'] ?? username);
       }
       return data;
@@ -90,6 +115,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -104,6 +133,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -118,6 +151,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -132,6 +169,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -141,22 +182,36 @@ class ApiClient {
   
   // 获取任务详情
   Future<Map<String, dynamic>> getTaskDetail(int taskId) async {
+    print('getTaskDetail called with taskId: $taskId');
+    print('baseUrl: $baseUrl');
     final response = await client.get(
       Uri.parse('$baseUrl/tasks/$taskId'),
       headers: _headers,
     );
+    print('Task response status: ${response.statusCode}');
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      print('Task data status field: ${data['status']}');
       try {
+        final identificationId = data['identification_id'] ?? taskId;
+        print('Fetching workflow for identificationId: $identificationId');
         final workflowResponse = await client.get(
-          Uri.parse('$baseUrl/identifications/$taskId/workflow'),
+          Uri.parse('$baseUrl/identifications/$identificationId/workflow'),
           headers: _headers,
         );
+        print('Workflow response status: ${workflowResponse.statusCode}');
         if (workflowResponse.statusCode == 200) {
           data['workflow_history'] = jsonDecode(workflowResponse.body);
+          print('Workflow history loaded: ${data['workflow_history']}');
         }
-      } catch (_) {}
+      } catch (e) {
+        print('获取工作流历史失败: $e');
+      }
       return data;
     } else {
       throw Exception('获取任务详情失败');
@@ -170,13 +225,17 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
       return [];
     }
   }
-  
+
   // 完成任务/审批
   Future<Map<String, dynamic>> completeTask(int taskId, Map<String, dynamic> data) async {
     final response = await client.post(
@@ -185,10 +244,14 @@ class ApiClient {
       body: jsonEncode(data),
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception(jsonDecode(response.body)['detail'] ?? '操作失败');
+      throw Exception(_getErrorMessage(response));
     }
   }
 
@@ -200,10 +263,14 @@ class ApiClient {
       body: jsonEncode(data),
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception(jsonDecode(response.body)['detail'] ?? '暂存失败');
+      throw Exception(_getErrorMessage(response));
     }
   }
 
@@ -215,10 +282,32 @@ class ApiClient {
       body: jsonEncode(data),
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception(jsonDecode(response.body)['detail'] ?? '退回失败');
+      throw Exception(_getErrorMessage(response));
+    }
+  }
+
+  // 撤回任务
+  Future<Map<String, dynamic>> withdrawTask(int taskId) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl/tasks/$taskId/withdraw'),
+      headers: _headers,
+    );
+    
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(_getErrorMessage(response));
     }
   }
 
@@ -229,6 +318,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -245,6 +338,10 @@ class ApiClient {
         headers: _headers,
       );
       
+      if (response.statusCode == 401) {
+        handleUnauthorized();
+        throw Exception('登录已过期，请重新登录');
+      }
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -262,6 +359,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -276,6 +377,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -290,6 +395,10 @@ class ApiClient {
       headers: _headers,
     );
     
+    if (response.statusCode == 401) {
+      handleUnauthorized();
+      throw Exception('登录已过期，请重新登录');
+    }
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {

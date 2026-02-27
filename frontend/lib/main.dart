@@ -17,9 +17,14 @@ void main() {
 class GfmsApp extends StatelessWidget {
   const GfmsApp({super.key});
 
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
+    ApiClient.instance.setNavigatorKey(navigatorKey);
+    
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: '绿色金融管理',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -31,6 +36,11 @@ class GfmsApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'System',
       ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const AuthWrapper(),
+        '/login': (context) => const LoginPage(),
+      },
       home: const AuthWrapper(),
     );
   }

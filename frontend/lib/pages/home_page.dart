@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
 import 'task_list_page.dart';
+import 'task_detail_page.dart';
 import 'announcement_list_page.dart';
 import 'profile_page.dart';
 
@@ -16,6 +17,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   Map<String, dynamic> _dashboardData = {};
+  List<dynamic> _pendingTasksList = [];
   List<dynamic> _announcements = [];
   int _currentAnnouncementIndex = 0;
   String _userName = '用户';
@@ -30,7 +32,7 @@ class _HomePageState extends State<HomePage> {
     _loadUserName();
     _loadDashboard();
     _loadAnnouncements();
-    _loadChartData();
+    _loadPendingTasks();
   }
 
   Future<void> _loadUserName() async {
@@ -68,16 +70,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
   
-  Future<void> _loadChartData() async {
+  Future<void> _loadPendingTasks() async {
     try {
-      final balanceTrend = await ApiClient.instance.getLoanBalanceTrend();
-      final disbursementTrendData = await ApiClient.instance.getDisbursementTrend();
-      final categoryDist = await ApiClient.instance.getGreenCategoryDistribution();
+      final data = await ApiClient.instance.getPendingTasks(page: 1, pageSize: 5);
       if (mounted) {
         setState(() {
-          _loanBalanceTrend = balanceTrend is List ? balanceTrend : [];
-          _disbursementTrend = disbursementTrendData is List ? disbursementTrendData : [];
-          _greenCategoryDistribution = categoryDist is List ? categoryDist : [];
+          _pendingTasksList = data is Map ? (data['items'] ?? []) : [];
         });
       }
     } catch (e) {
@@ -140,70 +138,10 @@ class _HomePageState extends State<HomePage> {
           _buildWelcomeSection(),
           const SizedBox(height: 16),
           _buildStatsGrid(),
+          const SizedBox(height: 16),
+          _buildPendingTasksList(),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatsGrid() {
-    final stats = [
-      {'icon': Icons.account_balance, 'title': '绿色贷款余额', 'value': _dashboardData['green_loan_balance'] ?? '0', 'color': const Color(0xFF4CAF50)},
-      {'icon': Icons.business_center, 'title': '绿色租赁', 'value': _dashboardData['green_leasing'] ?? '0', 'color': const Color(0xFF667eea)},
-      {'icon': Icons.account_balance_wallet, 'title': '绿色理财', 'value': _dashboardData['green_wealth_management'] ?? '0', 'color': const Color(0xFF764ba2)},
-      {'icon': Icons.trending_up, 'title': '绿色承销', 'value': _dashboardData['green_underwriting'] ?? '0', 'color': const Color(0xFF4DD0E1)},
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.6,
-      ),
-      itemCount: stats.length,
-      itemBuilder: (context, index) {
-        final stat = stats[index];
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: (stat['color'] as Color).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(stat['icon'] as IconData, color: stat['color'] as Color, size: 20),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      stat['title'] as String,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                '${stat['value']}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -340,6 +278,148 @@ class _HomePageState extends State<HomePage> {
         Text(
           '$label ${value is int ? value : 0}',
           style: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsGrid() {
+    final stats = [
+      {'icon': Icons.account_balance, 'title': '绿色贷款余额', 'value': _dashboardData['green_loan_balance'] ?? '0', 'color': const Color(0xFF4CAF50)},
+      {'icon': Icons.business_center, 'title': '绿色租赁', 'value': _dashboardData['green_leasing'] ?? '0', 'color': const Color(0xFF667eea)},
+      {'icon': Icons.account_balance_wallet, 'title': '绿色理财', 'value': _dashboardData['green_wealth_management'] ?? '0', 'color': const Color(0xFF764ba2)},
+      {'icon': Icons.trending_up, 'title': '绿色承销', 'value': _dashboardData['green_underwriting'] ?? '0', 'color': const Color(0xFF4DD0E1)},
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.6,
+      ),
+      itemCount: stats.length,
+      itemBuilder: (context, index) {
+        final stat = stats[index];
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (stat['color'] as Color).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(stat['icon'] as IconData, color: stat['color'] as Color, size: 20),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      stat['title'] as String,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${stat['value']}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPendingTasksList() {
+    if (_pendingTasksList.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Text('暂无待办事项', style: TextStyle(color: Color(0xFF999999))),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('待办事项 (${_pendingTasksList.length})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            TextButton(
+              onPressed: () => setState(() => _currentIndex = 1),
+              child: const Text('查看全部'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _pendingTasksList.length > 5 ? 5 : _pendingTasksList.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final task = _pendingTasksList[index];
+              return ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9800).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.assignment, color: Color(0xFFFF9800), size: 20),
+                ),
+                title: Text(
+                  '${task['customer_name'] ?? task['title'] ?? '任务'} ${_formatDate(task['disbursement_date'])}',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  task['business_type'] ?? '',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+                ),
+                trailing: const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TaskDetailPage(taskId: task['task_id'] ?? task['id'] ?? 0),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadPendingTasks();
+                  }
+                },
+              );
+            },
+          ),
         ),
       ],
     );

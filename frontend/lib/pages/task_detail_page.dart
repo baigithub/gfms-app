@@ -57,7 +57,10 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
   List<dynamic> _buildCategoryTree(dynamic categories) {
     if (categories is! List) return [];
     
+    final flatList = <Map<String, dynamic>>[];
     final largeMap = <String, Map<String, dynamic>>{};
+    final mediumMap = <String, Map<String, dynamic>>{};
+    final smallMap = <String, Map<String, dynamic>>{};
     
     for (var cat in categories) {
       final largeCode = cat['large_code']?.toString() ?? '';
@@ -69,41 +72,115 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
       
       if (largeCode.isNotEmpty && largeName.isNotEmpty) {
         if (!largeMap.containsKey(largeCode)) {
-          largeMap[largeCode] = {
-            'value': largeCode,
-            'label': '$largeCode $largeName',
-            'children': <Map<String, dynamic>>[],
-          };
+          largeMap[largeCode] = {'code': largeCode, 'name': largeName};
         }
-        
-        if (mediumCode.isNotEmpty && mediumName.isNotEmpty) {
-          final largeChildren = largeMap[largeCode]!['children'] as List;
-          var mediumNode = largeChildren.firstWhere(
-            (m) => m['value'] == mediumCode,
-            orElse: () => null,
-          );
-          
-          if (mediumNode == null) {
-            mediumNode = {
-              'value': mediumCode,
-              'label': '$mediumCode $mediumName',
-              'children': <Map<String, dynamic>>[],
-            };
-            largeChildren.add(mediumNode);
-          }
-          
-          if (smallCode.isNotEmpty && smallName.isNotEmpty) {
-            final mediumChildren = mediumNode['children'] as List;
-            mediumChildren.add({
-              'value': smallCode,
-              'label': '$smallCode $smallName',
-            });
-          }
+      }
+      
+      if (mediumCode.isNotEmpty && mediumName.isNotEmpty) {
+        final key = '$largeCode|$mediumCode';
+        if (!mediumMap.containsKey(key)) {
+          mediumMap[key] = {'largeCode': largeCode, 'largeName': largeName, 'code': mediumCode, 'name': mediumName};
+        }
+      }
+      
+      if (smallCode.isNotEmpty && smallName.isNotEmpty) {
+        final key = '$largeCode|$mediumCode|$smallCode';
+        if (!smallMap.containsKey(key)) {
+          smallMap[key] = {
+            'largeCode': largeCode,
+            'largeName': largeName,
+            'mediumCode': mediumCode,
+            'mediumName': mediumName,
+            'code': smallCode,
+            'name': smallName,
+          };
         }
       }
     }
     
-    return largeMap.values.toList();
+    for (var large in largeMap.values) {
+      final largeCode = large['code'];
+      final largeName = large['name'];
+      
+      for (var medium in mediumMap.values) {
+        if (medium['largeCode'] != largeCode) continue;
+        final mediumCode = medium['code'];
+        final mediumName = medium['name'];
+        
+        for (var small in smallMap.values) {
+          if (small['largeCode'] != largeCode || small['mediumCode'] != mediumCode) continue;
+          
+          flatList.add({
+            'value': small['code'],
+            'label': '${largeCode} ${largeName}/${mediumCode} ${mediumName}/${small['code']} ${small['name']}',
+            'largeCode': largeCode,
+            'largeName': largeName,
+            'mediumCode': mediumCode,
+            'mediumName': mediumName,
+            'smallCode': small['code'],
+            'smallName': small['name'],
+          });
+        }
+        
+        if (mediumMap.values.where((m) => m['largeCode'] == largeCode && m['code'] == mediumCode).isNotEmpty &&
+            smallMap.values.where((s) => s['largeCode'] == largeCode && s['mediumCode'] == mediumCode).isEmpty) {
+          flatList.add({
+            'value': mediumCode,
+            'label': '${largeCode} ${largeName}/${mediumCode} ${mediumName}',
+            'largeCode': largeCode,
+            'largeName': largeName,
+            'mediumCode': mediumCode,
+            'mediumName': mediumName,
+            'smallCode': null,
+            'smallName': null,
+          });
+        }
+      }
+      
+      if (mediumMap.values.where((m) => m['largeCode'] == largeCode).isEmpty) {
+        flatList.add({
+          'value': largeCode,
+          'label': '${largeCode} ${largeName}',
+          'largeCode': largeCode,
+          'largeName': largeName,
+          'mediumCode': null,
+          'mediumName': null,
+          'smallCode': null,
+          'smallName': null,
+        });
+      }
+    }
+    
+    return flatList;
+  }
+
+  Map<String, dynamic> _buildSaveData() {
+    final data = <String, dynamic>{};
+    
+    if (_selectedCategory.isNotEmpty) {
+      final selected = _selectedCategory.first;
+      for (var item in _categoryOptions) {
+        if (item['value'] == selected) {
+          if (item['smallCode'] != null) {
+            data['project_category_small'] = item['smallName'];
+            data['project_category_medium'] = item['mediumName'];
+            data['project_category_large'] = item['largeName'];
+          } else if (item['mediumCode'] != null) {
+            data['project_category_medium'] = item['mediumName'];
+            data['project_category_large'] = item['largeName'];
+          } else {
+            data['project_category_large'] = item['largeName'];
+          }
+          break;
+        }
+      }
+    }
+    
+    if (_opinionController.text.isNotEmpty) {
+      data['comment'] = _opinionController.text;
+    }
+    
+    return data;
   }
 
   Future<void> _submitTask(String action) async {
@@ -112,33 +189,35 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
     setState(() => _isSubmitting = true);
     
     try {
-      final data = {
-        'comment': _opinionController.text,
-        'category_code': _selectedCategory.isNotEmpty ? _selectedCategory.last : null,
-      };
-      
       if (action == 'save') {
-        await ApiClient.instance.saveTask(widget.taskId, data);
+        final saveData = _buildSaveData();
+        await ApiClient.instance.saveTask(widget.taskId, saveData);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('暂存成功')),
           );
+          _loadTaskDetail();
         }
       } else if (action == 'return') {
-        await ApiClient.instance.returnTask(widget.taskId, data);
+        final returnData = _buildSaveData();
+        returnData['return_to_node'] = 'customer_manager';
+        await ApiClient.instance.returnTask(widget.taskId, returnData);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('退回成功')),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } else if (action == 'complete') {
-        await ApiClient.instance.completeTask(widget.taskId, data);
+        final completeData = _buildSaveData();
+        completeData['approval_result'] = '同意';
+        completeData['comment'] = _opinionController.text;
+        await ApiClient.instance.completeTask(widget.taskId, completeData);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('提交成功')),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       }
     } catch (e) {
@@ -157,7 +236,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
   bool get _canReturn {
     final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
     final currentTask = history.firstWhere(
-      (h) => h['status'] == '待处理',
+      (h) => h['status'] == '待处理' || h['status'] == '办理中',
       orElse: () => null,
     );
     if (currentTask == null) return false;
@@ -167,7 +246,39 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
 
   bool get _isPendingTask {
     final status = _taskDetail['status']?.toString() ?? '';
-    return status == '待处理' || status == '办理中';
+    return status == '待处理' || status == '暂存' || status == '待办' || status == '办理中';
+  }
+  
+  bool get _isCompletedTask {
+    final status = _taskDetail['status']?.toString() ?? '';
+    return status == '已完成' || status == '已办结';
+  }
+  
+  bool get _canShowEditForm {
+    return _isPendingTask;
+  }
+  
+  bool get _canShowReadOnlyForm {
+    return _isCompletedTask;
+  }
+
+  bool get _canWithdraw {
+    if (_isPendingTask) return false;
+    final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
+    final pendingTasks = history.where((h) => h['status'] == '待处理' || h['status'] == '暂存' || h['status'] == '办理中').toList();
+    return pendingTasks.isNotEmpty;
+  }
+
+  bool get _showOpinionInput {
+    if (!_isPendingTask) return false;
+    final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
+    final currentTask = history.firstWhere(
+      (h) => h['status'] == '待处理',
+      orElse: () => null,
+    );
+    if (currentTask == null) return false;
+    final taskKey = currentTask['task_key']?.toString() ?? '';
+    return taskKey != 'manager_identification';
   }
 
   @override
@@ -214,7 +325,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
                         ],
                       ),
                     ),
-                    if (_isPendingTask) _buildActionButtons(),
+                    _buildActionButtons(),
                   ],
                 ),
     );
@@ -247,6 +358,10 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
   }
 
   Widget _buildCascaderSelector() {
+    if (_isCompletedTask) {
+      return _buildCategoryDisplay();
+    }
+    
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -267,10 +382,45 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
             const SizedBox(height: 8),
             const Text('选择分类:', style: TextStyle(fontSize: 13, color: Color(0xFF666666))),
             const SizedBox(height: 8),
-            _buildLargeCategorySelector(),
+            _buildFlatCategorySelector(),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildFlatCategorySelector() {
+    return DropdownButtonFormField<String>(
+      value: _selectedCategory.isNotEmpty ? _selectedCategory.first : null,
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+      ),
+      hint: const Text('请选择绿色金融支持项目分类'),
+      isExpanded: true,
+      items: _categoryOptions.map<DropdownMenuItem<String>>((item) {
+        return DropdownMenuItem<String>(
+          value: item['value']?.toString(),
+          child: Text(
+            item['label']?.toString() ?? '',
+            style: const TextStyle(fontSize: 13),
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedCategory = [value];
+          });
+        }
+      },
     );
   }
 
@@ -314,125 +464,22 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
     }
     return code;
   }
-
-  Widget _buildLargeCategorySelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('一级分类', style: TextStyle(fontSize: 12, color: Color(0xFF999999))),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _categoryOptions.map((large) {
-            final isSelected = _selectedCategory.isNotEmpty && _selectedCategory[0] == large['value'];
-            return ChoiceChip(
-              label: Text(large['label']?.toString() ?? '', style: TextStyle(fontSize: 12)),
-              selected: isSelected,
-              selectedColor: const Color(0xFF667eea),
-              onSelected: (selected) {
-                setState(() {
-                  if (selected && large['children'] != null && (large['children'] as List).isNotEmpty) {
-                    _selectedCategory = [large['value']];
-                  }
-                });
-              },
-            );
-          }).toList(),
-        ),
-        if (_selectedCategory.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          _buildMediumCategorySelector(_selectedCategory[0]),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildMediumCategorySelector(String largeCode) {
-    final large = _categoryOptions.firstWhere(
-      (l) => l['value'] == largeCode,
-      orElse: () => null,
-    );
-    if (large == null || large['children'] == null) return const SizedBox();
+  
+  Widget _buildCategoryDisplay() {
+    final large = _taskDetail['project_category_large']?.toString() ?? '';
+    final medium = _taskDetail['project_category_medium']?.toString() ?? '';
+    final small = _taskDetail['project_category_small']?.toString() ?? '';
     
-    final mediums = large['children'] as List;
-    if (mediums.isEmpty) return const SizedBox();
+    if (large.isEmpty && medium.isEmpty && small.isEmpty) {
+      return const Text('无', style: TextStyle(color: Color(0xFF999999)));
+    }
     
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('二级分类', style: TextStyle(fontSize: 12, color: Color(0xFF999999))),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: mediums.map((medium) {
-            final isSelected = _selectedCategory.length > 1 && _selectedCategory[1] == medium['value'];
-            return ChoiceChip(
-              label: Text(medium['label']?.toString() ?? '', style: TextStyle(fontSize: 12)),
-              selected: isSelected,
-              selectedColor: const Color(0xFF667eea),
-              onSelected: (selected) {
-                setState(() {
-                  if (selected && medium['children'] != null && (medium['children'] as List).isNotEmpty) {
-                    _selectedCategory = [largeCode, medium['value']];
-                  }
-                });
-              },
-            );
-          }).toList(),
-        ),
-        if (_selectedCategory.length > 1) ...[
-          const SizedBox(height: 16),
-          _buildSmallCategorySelector(largeCode, _selectedCategory[1]),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildSmallCategorySelector(String largeCode, String mediumCode) {
-    final large = _categoryOptions.firstWhere(
-      (l) => l['value'] == largeCode,
-      orElse: () => null,
-    );
-    if (large == null || large['children'] == null) return const SizedBox();
+    final parts = <String>[];
+    if (large.isNotEmpty) parts.add(large);
+    if (medium.isNotEmpty) parts.add(medium);
+    if (small.isNotEmpty) parts.add(small);
     
-    final mediums = large['children'] as List;
-    final medium = mediums.firstWhere(
-      (m) => m['value'] == mediumCode,
-      orElse: () => null,
-    );
-    if (medium == null || medium['children'] == null) return const SizedBox();
-    
-    final smalls = medium['children'] as List;
-    if (smalls.isEmpty) return const SizedBox();
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('三级分类', style: TextStyle(fontSize: 12, color: Color(0xFF999999))),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: smalls.map((small) {
-            final isSelected = _selectedCategory.length > 2 && _selectedCategory[2] == small['value'];
-            return ChoiceChip(
-              label: Text(small['label']?.toString() ?? '', style: TextStyle(fontSize: 12)),
-              selected: isSelected,
-              selectedColor: const Color(0xFF4CAF50),
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _selectedCategory = [largeCode, mediumCode, small['value']];
-                  }
-                });
-              },
-            );
-          }).toList(),
-        ),
-      ],
-    );
+    return Text(parts.join(' > '), style: const TextStyle(fontSize: 13));
   }
 
   Widget _buildInfoCard(String title, List<Map<String, dynamic>> items) {
@@ -489,7 +536,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
   }
 
   Widget _buildBusinessInfo() {
-    final info = [
+    List<Map<String, dynamic>> info = [
       {'label': '贷款编号', 'value': _safeToString(_taskDetail['loan_code'])},
       {'label': '客户名称', 'value': _safeToString(_taskDetail['customer_name'])},
       {'label': '业务品种', 'value': _safeToString(_taskDetail['business_type'])},
@@ -498,16 +545,23 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
       {'label': '放款日期', 'value': _formatDate(_taskDetail['disbursement_date'])},
       {'label': 'ESG风险等级', 'value': _safeToString(_taskDetail['esg_risk_level'])},
       {'label': 'ESG表现等级', 'value': _safeToString(_taskDetail['esg_performance_level'])},
-      {'label': '办结时间', 'value': _formatDateTime(_taskDetail['completed_at'])},
     ];
+    
+    if (_taskDetail['formatted_category'] != null && _taskDetail['formatted_category'].toString().isNotEmpty) {
+      info.add({'label': '绿色金融支持项目目录', 'value': _taskDetail['formatted_category']});
+    }
+    
+    if (_isCompletedTask) {
+      info.add({'label': '办结时间', 'value': _formatDateTime(_taskDetail['completed_at'])});
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: 8, bottom: 24),
       child: Column(
         children: [
           _buildInfoCard('基本信息', info),
-          _buildCategorySelector(),
-          _buildOpinionInput(),
+          if (_isPendingTask) _buildCategorySelector(),
+          if (_isPendingTask) _buildOpinionInput(),
         ],
       ),
     );
@@ -559,6 +613,42 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
   }
 
   Widget _buildActionButtons() {
+    if (_isCompletedTask) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
+        ),
+        child: Row(
+          children: [
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              ),
+              child: const Text('关闭'),
+            ),
+            const Spacer(),
+            if (_canWithdraw) ...[
+              OutlinedButton(
+                onPressed: _isSubmitting ? null : () => _withdrawTask(),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  side: const BorderSide(color: Color(0xFFFF9800)),
+                  foregroundColor: const Color(0xFFFF9800),
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('撤回'),
+              ),
+              const SizedBox(width: 12),
+            ],
+          ],
+        ),
+      );
+    }
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -597,6 +687,20 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
             ),
             const SizedBox(width: 12),
           ],
+          if (_canWithdraw) ...[
+            OutlinedButton(
+              onPressed: _isSubmitting ? null : () => _withdrawTask(),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                side: const BorderSide(color: Color(0xFFFF9800)),
+                foregroundColor: const Color(0xFFFF9800),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('撤回'),
+            ),
+            const SizedBox(width: 12),
+          ],
           ElevatedButton(
             onPressed: _isSubmitting ? null : () => _submitTask('complete'),
             style: ElevatedButton.styleFrom(
@@ -611,6 +715,84 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : const Text('提交审批'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompletedActionButtons() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+              backgroundColor: const Color(0xFF667eea),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('关闭'),
+          ),
+          if (_canWithdraw) ...[
+            const SizedBox(width: 16),
+            OutlinedButton(
+              onPressed: _isSubmitting ? null : () => _withdrawTask(),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                side: const BorderSide(color: Color(0xFFFF9800)),
+                foregroundColor: const Color(0xFFFF9800),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('撤回'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _withdrawTask() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认撤回'),
+        content: const Text('确定要撤回该任务吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              setState(() => _isSubmitting = true);
+              try {
+                await ApiClient.instance.withdrawTask(widget.taskId);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('撤回成功')));
+                  Navigator.pop(context, true);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('撤回失败: $e')));
+                }
+              } finally {
+                if (mounted) setState(() => _isSubmitting = false);
+              }
+            },
+            child: const Text('确定'),
           ),
         ],
       ),
@@ -714,7 +896,19 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
                 final h = entry.value;
                 final isLast = index == history.length - 1;
                 final time = _formatDateTime(h['started_at']);
-                final action = h['approval_result'] == '同意' ? '提交审批' : '退回';
+                final status = h['status']?.toString() ?? '';
+                final String action;
+                if (status == '待处理' || status == '暂存') {
+                  action = '待办理';
+                } else if (h['approval_result'] == '同意') {
+                  action = '提交审批';
+                } else if (h['approval_result'] == '退回' || h['approval_result'] == '不同意') {
+                  action = '退回';
+                } else if (h['approval_result'] == '撤回') {
+                  action = '撤回';
+                } else {
+                  action = '提交审批';
+                }
                 
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,7 +919,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
                           width: 12,
                           height: 12,
                           decoration: BoxDecoration(
-                            color: h['status'] == '待处理' ? const Color(0xFFFF9800) : const Color(0xFF667eea),
+                            color: (status == '待处理' || status == '暂存') ? const Color(0xFFFF9800) : const Color(0xFF667eea),
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
