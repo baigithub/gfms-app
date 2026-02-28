@@ -96,15 +96,15 @@ class _TaskListPageState extends State<TaskListPage> with SingleTickerProviderSt
           : TabBarView(
               controller: _tabController,
               children: [
-                _buildTaskListContent(_pendingTasks),
-                _buildTaskListContent(_completedTasks),
-                _buildTaskListContent(_archivedTasks),
+                _buildTaskListContent(_pendingTasks, 'pending'),
+                _buildTaskListContent(_completedTasks, 'completed'),
+                _buildTaskListContent(_archivedTasks, 'archived'),
               ],
             ),
     );
   }
 
-  Widget _buildTaskListContent(List<dynamic> tasks) {
+  Widget _buildTaskListContent(List<dynamic> tasks, String taskSource) {
     if (tasks.isEmpty) {
       return const Center(child: Text('暂无任务'));
     }
@@ -129,7 +129,7 @@ class _TaskListPageState extends State<TaskListPage> with SingleTickerProviderSt
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
-              final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => TaskDetailPage(taskId: task['task_id'] ?? task['id'] ?? 0)));
+              final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => TaskDetailPage(taskId: task['task_id'] ?? task['id'] ?? 0, taskSource: taskSource)));
               if (result == true) {
                 _loadTasks();
               }

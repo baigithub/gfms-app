@@ -3,7 +3,8 @@ import '../api/api_client.dart';
 
 class TaskDetailPage extends StatefulWidget {
   final int taskId;
-  const TaskDetailPage({super.key, required this.taskId});
+  final String taskSource;
+  const TaskDetailPage({super.key, required this.taskId, this.taskSource = 'pending'});
 
   @override
   State<TaskDetailPage> createState() => _TaskDetailPageState();
@@ -200,7 +201,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
         }
       } else if (action == 'return') {
         final returnData = _buildSaveData();
-        returnData['return_to_node'] = 'customer_manager';
+        returnData['return_to_node'] = 'manager_identification';
         await ApiClient.instance.returnTask(widget.taskId, returnData);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -234,24 +235,30 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
   }
 
   bool get _canReturn {
+    if (!_isPendingTask) return false;
     final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
-    final currentTask = history.firstWhere(
-      (h) => h['status'] == '待处理' || h['status'] == '办理中',
-      orElse: () => null,
-    );
-    if (currentTask == null) return false;
-    final taskKey = currentTask['task_key']?.toString() ?? '';
+    String taskKey = '';
+    if (history.isNotEmpty) {
+      final currentTask = history.firstWhere(
+        (h) => h['status'] == '待处理' || h['status'] == '办理中',
+        orElse: () => null,
+      );
+      if (currentTask != null) {
+        taskKey = currentTask['task_key']?.toString() ?? '';
+      }
+    }
+    if (taskKey.isEmpty) {
+      taskKey = _taskDetail['task_key']?.toString() ?? '';
+    }
     return taskKey != 'manager_identification';
   }
 
   bool get _isPendingTask {
-    final status = _taskDetail['status']?.toString() ?? '';
-    return status == '待处理' || status == '暂存' || status == '待办' || status == '办理中';
+    return widget.taskSource == 'pending';
   }
   
   bool get _isCompletedTask {
-    final status = _taskDetail['status']?.toString() ?? '';
-    return status == '已完成' || status == '已办结';
+    return widget.taskSource == 'completed';
   }
   
   bool get _canShowEditForm {
@@ -264,9 +271,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
 
   bool get _canWithdraw {
     if (_isPendingTask) return false;
-    final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
-    final pendingTasks = history.where((h) => h['status'] == '待处理' || h['status'] == '暂存' || h['status'] == '办理中').toList();
-    return pendingTasks.isNotEmpty;
+    return _isCompletedTask;
   }
 
   bool get _showOpinionInput {
@@ -801,7 +806,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
 
   Widget _buildApprovalRecords() {
     final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
-    final approvals = history.where((h) => h['status'] == '已完成' && h['approval_result'] != null).toList();
+    final approvals = history.where((h) => h['approval_result'] != null && h['approval_result'] != '暂存').toList();
 
     if (approvals.isEmpty) {
       return _buildEmptyState('暂无审批记录', Icons.approval);
@@ -859,7 +864,11 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
                       _buildInfoRow('审批人姓名', _safeToString(a['assignee_name'])),
                       _buildInfoRow('审批人岗位', _safeToString(a['position_name'] ?? '-')),
                       _buildInfoRow('办理完成时间', _formatDateTime(a['completed_at'])),
-                      if (a['approval_result'] != null) _buildInfoRow('审批结果', _safeToString(a['approval_result'])),
+                      if (a['approval_result'] != null)
+                        _buildInfoRow(
+                          a['approval_result'] == '暂存' ? '操作类型' : '审批结果',
+                          _safeToString(a['approval_result']),
+                        ),
                       if (a['comment'] != null && a['comment'].toString().isNotEmpty) _buildInfoRow('审批意见', _safeToString(a['comment'])),
                     ],
                   ),
@@ -874,8 +883,15 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
 
   Widget _buildFlowTrack() {
     final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
+    final filteredHistory = history.where((h) {
+      final status = h['status']?.toString() ?? '';
+      final approvalResult = h['approval_result']?.toString() ?? '';
+      if (status == '待处理') return true;
+      if (approvalResult == '同意' || approvalResult == '退回' || approvalResult == '不同意' || approvalResult == '撤回') return true;
+      return false;
+    }).toList();
     
-    if (history.isEmpty) {
+    if (filteredHistory.isEmpty) {
       return _buildEmptyState('暂无流程跟踪', Icons.timeline);
     }
 
@@ -891,14 +907,14 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
             ),
             child: Column(
-              children: history.asMap().entries.map((entry) {
+              children: filteredHistory.asMap().entries.map((entry) {
                 final index = entry.key;
                 final h = entry.value;
-                final isLast = index == history.length - 1;
+                final isLast = index == filteredHistory.length - 1;
                 final time = _formatDateTime(h['started_at']);
                 final status = h['status']?.toString() ?? '';
                 final String action;
-                if (status == '待处理' || status == '暂存') {
+                if (status == '待处理') {
                   action = '待办理';
                 } else if (h['approval_result'] == '同意') {
                   action = '提交审批';
@@ -907,7 +923,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
                 } else if (h['approval_result'] == '撤回') {
                   action = '撤回';
                 } else {
-                  action = '提交审批';
+                  action = '';
                 }
                 
                 return Row(
@@ -958,7 +974,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> with SingleTickerProvid
 
   Widget _buildCategoryTrack() {
     final history = _taskDetail['workflow_history'] as List<dynamic>? ?? [];
-    final categoryHistory = history.where((h) => h['formatted_category'] != null && h['formatted_category'].toString().isNotEmpty).toList();
+    final categoryHistory = history.where((h) => h['formatted_category'] != null && h['formatted_category'].toString().isNotEmpty && h['status'] != '暂存').toList();
 
     if (categoryHistory.isEmpty) {
       return _buildEmptyState('暂无绿色分类变动', Icons.category);

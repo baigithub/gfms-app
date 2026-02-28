@@ -410,7 +410,7 @@ class _HomePageState extends State<HomePage> {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TaskDetailPage(taskId: task['task_id'] ?? task['id'] ?? 0),
+                      builder: (_) => TaskDetailPage(taskId: task['task_id'] ?? task['id'] ?? 0, taskSource: 'pending'),
                     ),
                   );
                   if (result == true) {
